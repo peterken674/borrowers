@@ -1,9 +1,11 @@
 sdk-version: 1.16.0
 name: Borrowers
 source: daml
+init-script: Main:setup
 parties:
-  - Alice
-  - Bob
+  - Tom
+  - Dick
+  - Harry
 version: 0.0.1
 dependencies:
   - daml-prim

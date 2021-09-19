@@ -1,0 +1,57 @@
+module Main where
+
+import  Daml.Script
+
+type ItemCustodyId = ContractId ItemCustody
+
+-- Track chain of custody of item
+template ItemCustody
+    with 
+        owner : Party
+        neighbor : Party
+        custodian : Party
+        itemName : Text
+        mileage : Int
+
+    where
+    signatory owner
+    observer neighbor
+
+    controller owner can 
+        ReleaseItemTo : ItemCustodyId
+            with
+                friend : Party
+            do
+                create this with 
+                    custodian = friend
+
+    controller custodian can 
+        ReturnItem : ItemCustodyId
+            with
+                rightfulOwner : Party
+                meterCount : Int
+            do
+                create this with 
+                    custodian = rightfulOwner
+                    mileage = meterCount
+
+-- Test
+setup : Script ItemCustodyId
+setup = script do
+    tom <- allocateParty "Tom"
+    dick <- allocateParty "Dick"
+    harry <- allocateParty "Harry"
+
+    brandNewCar <- submit tom do
+        createCmd ItemCustody with
+            owner = tom
+            custodian = tom
+            neighbor = harry
+            itemName = "Brand New Car"
+            mileage = 0
+
+    dickHasCar <- submit tom do
+        exerciseCmd brandNewCar ReleaseItemTo with friend = dick
+
+    submit dick do
+        exerciseCmd dickHasCar ReturnItem with rightfulOwner = tom, meterCount = 900
